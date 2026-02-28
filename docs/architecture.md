@@ -9,7 +9,10 @@ This plan defines the architecture for the "Pfirsichfest" project, a Python-base
 
 ## Key Architectural Decisions
 
-### 1. The Local Telegram Bot API Server
+### 1. Monitoring & Logging
+Standard Python `logging` modules are utilized universally. Google Cloud automatically bridges these `stdout` interfaces into **Cloud Logging** natively (for both Cloud Run containers and Spot VMs), enabling seamless dashboard aggregation without configuring explicit stackdriver packages.
+
+### 2. The Local Telegram Bot API Server
 Because the Downloader VM is already an ephemeral environment, we run the official Telegram Bot API Server Docker container **on the Downloader VM itself** alongside the torrent client. This allows bypassing the standard 50 MB Telegram upload limit (up to 2GB) without paying for a constantly running custom server.
 
 ### 2. VPN & Serverless Compute
