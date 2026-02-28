@@ -13,6 +13,7 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.types import Update
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from google.cloud import (
     firestore,  # type: ignore
@@ -31,8 +32,17 @@ db: firestore.Client | None = None
 WEBHOOK_PATH = "/webhook"
 
 
+# Load environment variables
+load_dotenv()
+
+
 def get_secret(secret_id: str, version_id: str = "latest") -> str | None:
-    """Fetches a secret from Google Secret Manager."""
+    """Fetches a secret from environment (.env) or Google Secret Manager."""
+    # Priority 1: .env or Local System OS Env
+    if env_val := os.getenv(secret_id.upper().replace("-", "_")):
+        return env_val
+
+    # Priority 2: Google Secret Manager
     project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
     if not project_id:
         logger.warning(

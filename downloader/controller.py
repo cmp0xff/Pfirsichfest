@@ -7,8 +7,12 @@ import sys
 import time
 from pathlib import Path
 
+from dotenv import load_dotenv
 from google.cloud import compute_v1, firestore, secretmanager, storage  # type: ignore
 
+load_dotenv()
+
+# Standard logging behaves natively with Google Cloud Logging
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
 
@@ -20,7 +24,10 @@ BUCKET_NAME = os.environ.get("BUCKET_NAME", f"{PROJECT_ID}-pfirsichfest-archive"
 
 
 def get_secret(secret_id: str, version_id: str = "latest") -> str | None:
-    """Fetches a string secret from Google Secret Manager."""
+    """Fetches a string secret from .env or Google Secret Manager."""
+    if env_val := os.getenv(secret_id.upper().replace("-", "_")):
+        return env_val
+
     try:
         client = secretmanager.SecretManagerServiceClient()
         name = f"projects/{PROJECT_ID}/secrets/{secret_id}/versions/{version_id}"
@@ -148,7 +155,13 @@ if __name__ == "__main__":
         sys.exit(1)
 
     try:
-        start_vpn()
+        enable_vpn = os.environ.get("ENABLE_VPN", "false").lower() == "true"
+        if enable_vpn:
+            logger.info("VPN is ENABLED. Provisioning secure OpenVPN tunnel.")
+            start_vpn()
+        else:
+            logger.info("VPN is DISABLED via ENABLE_VPN=false. Running aria2c exposed.")
+
         file_path_out = start_torrent(MAGNET_LINK)
 
         size = Path(file_path_out).stat().st_size

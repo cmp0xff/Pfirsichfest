@@ -14,6 +14,12 @@ variable "gcp_region" {
   default     = "us-central1"
 }
 
+variable "enable_vpn" {
+  description = "Set to true to provision VPN secrets in Secret Manager"
+  type        = bool
+  default     = false
+}
+
 # 1. Enable Required APIs
 resource "google_project_service" "cloudrun" {
   service = "run.googleapis.com"
@@ -42,6 +48,29 @@ resource "google_secret_manager_secret" "telegram_token" {
   }
 }
 
+resource "google_secret_manager_secret" "vpn_user" {
+  count     = var.enable_vpn ? 1 : 0
+  secret_id = "vpn-user"
+  replication {
+    user_managed {
+      replicas {
+        location = var.gcp_region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret" "vpn_pass" {
+  count     = var.enable_vpn ? 1 : 0
+  secret_id = "vpn-pass"
+  replication {
+    user_managed {
+      replicas {
+        location = var.gcp_region
+      }
+    }
+  }
+}
 # 3. Cloud Storage Bucket for Large Files
 resource "google_storage_bucket" "archive_bucket" {
   name          = "${var.gcp_project_id}-pfirsichfest-archive"

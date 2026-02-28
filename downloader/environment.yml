@@ -13,3 +13,4 @@ dependencies:
       - google-cloud-compute
       - requests
       - google-cloud-firestore
+      - python-dotenv

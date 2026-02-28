@@ -14,3 +14,4 @@ dependencies:
       - google-cloud-secret-manager
       - google-cloud-firestore
       - aiogram
+      - python-dotenv
