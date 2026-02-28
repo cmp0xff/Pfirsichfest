@@ -1,0 +1,15 @@
+name: pfirsichfest-downloader
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python>=3.11
+  - aria2
+  - pip
+  - pytest
+  - pip:
+      - google-cloud-storage
+      - google-cloud-secret-manager
+      - google-cloud-compute
+      - requests
+      - google-cloud-firestore

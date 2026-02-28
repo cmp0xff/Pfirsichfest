@@ -1,0 +1,63 @@
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint-and-format:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install Pre-commit
+        run: pip install pre-commit
+
+      - name: Run Pre-commit Hooks
+        run: pre-commit run --all-files
+
+  test-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          activate-environment: pfirsichfest-bot
+          environment-file: bot/environment.yml
+          
+      - name: Run Pytest
+        shell: bash -el {0}
+        run: |
+          cd bot
+          conda run -n pfirsichfest-bot pytest tests/
+
+  test-downloader:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Miniconda
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          auto-update-conda: true
+          activate-environment: pfirsichfest-downloader
+          environment-file: downloader/environment.yml
+          
+      - name: Run Pytest
+        shell: bash -el {0}
+        run: |
+          cd downloader
+          conda run -n pfirsichfest-downloader pytest tests/

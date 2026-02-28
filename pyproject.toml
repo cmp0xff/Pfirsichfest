@@ -1,0 +1,27 @@
+[tool.ruff]
+lint.select = ["ALL"]
+lint.ignore = [
+    "D",     # pydocstyle
+    "ANN",   # flake8-annotations
+    "ERA001",# commented-out code
+    "COM812",# conflict with formatter
+    "ISC001",# conflict with formatter
+    "T201",  # print statements
+    "S",     # bandit (often overly aggressive for local scripts)
+    "FIX002",# allow TODOs
+    "PGH",   # allow generic type: ignore
+    "E501",  # Line too long
+    "TCH",   # Type checking imports
+    "TRY",   # Tryceratops (overly aggressive for simple scripts)
+    "FA102", # missing from __future__
+]
+
+[tool.pyright]
+typeCheckingMode = "strict"
+reportMissingTypeStubs = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownArgumentType = false
+reportMissingImports = false
+reportUntypedFunctionDecorator = false
+reportUnknownParameterType = false

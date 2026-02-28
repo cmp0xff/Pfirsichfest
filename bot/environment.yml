@@ -1,0 +1,16 @@
+name: pfirsichfest-bot
+channels:
+  - conda-forge
+  - nodefaults
+dependencies:
+  - python>=3.11
+  - pip
+  - pytest
+  - pip:
+      - fastapi
+      - uvicorn
+      - httpx
+      - google-cloud-compute
+      - google-cloud-secret-manager
+      - google-cloud-firestore
+      - aiogram

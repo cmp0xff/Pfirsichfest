@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Terraform
+.terraform/
+*.tfstate
+*.tfstate.backup
+
+# Conda
+/bot/creds.txt
+/downloader/creds.txt
