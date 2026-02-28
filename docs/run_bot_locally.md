@@ -19,3 +19,13 @@ conda run -n pfirsichfest-bot uvicorn bot.main:app --host 0.0.0.0 --port 8080 --
 
 ## Considerations
 * **Telegram Webhook HTTPS Requirement:** Telegram strictly requires a public HTTPS URL for webhooks. To receive real Telegram messages locally, you must use a reverse tunneling proxy (like `ngrok http 8080`) and register your temporary HTTPS URL via the Telegram `setWebhook` API.
+
+### How to receive Telegram messages locally using ngrok
+1. **Start ngrok:** In a separate terminal, run `ngrok http 8080`.
+2. **Copy the Forwarding URL:** ngrok will provide a public HTTPS URL (e.g., `https://<temp-id>.ngrok-free.app`).
+3. **Register Webhook:** Open your web browser and navigate to:
+   `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<YOUR_NGROK_URL>/webhook`
+   *(Replace `<YOUR_BOT_TOKEN>` with your bot's token from BotFather, and `<YOUR_NGROK_URL>` with the forwarding URL you just copied. **Important:** Do not forget the `/webhook` at the end!)*
+4. **Test:** Send a message to your bot on Telegram. The request will route through ngrok to your local server.
+
+> **Warning:** When you are done testing and close ngrok, the temporary URL will become invalid. You will need to reset the webhook to your production URL (e.g., your Google Cloud Run URL) using the same `setWebhook` API method.

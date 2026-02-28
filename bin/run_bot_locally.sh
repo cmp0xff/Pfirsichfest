@@ -30,5 +30,6 @@ fi
 
 echo "Starting Uvicorn Server on http://localhost:8080"
 echo "Note: To receive real Telegram messages locally, you must use something like \`ngrok http 8080\` and set your webhook via the regular Telegram API."
+echo "      See docs/run_bot_locally.md for detailed instructions on using ngrok."
 
-conda run -n pfirsichfest-bot uvicorn bot.main:app --host 0.0.0.0 --port 8080 --reload
+conda run --no-capture-output -n pfirsichfest-bot uvicorn bot.main:app --host 0.0.0.0 --port 8080 --reload

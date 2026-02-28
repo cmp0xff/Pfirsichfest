@@ -46,11 +46,13 @@ def get_secret(secret_id: str, version_id: str = "latest") -> str | None:
 
     # Priority 2: Google Secret Manager
     project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
-    if not project_id:
+    if not project_id or project_id == "your-gcp-project-id":
         logger.warning(
-            "No GOOGLE_CLOUD_PROJECT set. Using dummy token for %s", secret_id
+            "No valid GOOGLE_CLOUD_PROJECT set. Using dummy token for %s", secret_id
         )
-        return "123456789:dummy-token-for-local-testing"
+        if secret_id == "telegram-bot-token":
+            return "123456789:dummy-token-for-local-testing"
+        return "dummy-secret"
 
     try:
         client = secretmanager.SecretManagerServiceClient()
@@ -68,9 +70,9 @@ async def cmd_start(message: types.Message) -> None:
     """Handles the /start command."""
     await message.answer(
         "Welcome to the Pfirsichfest P2P Bot! 🍑\n"
-        "Send `/download <magnet_link>` to begin a secure download instance.\n"
-        "Send `/status` to check active instances.\n"
-        "Send `/help` for more information.",
+        "Send <code>/download &lt;magnet_link&gt;</code> to begin a secure download instance.\n"
+        "Send <code>/status</code> to check active instances.\n"
+        "Send <code>/help</code> for more information.",
     )
 
 
@@ -78,14 +80,14 @@ async def cmd_start(message: types.Message) -> None:
 async def cmd_help(message: types.Message) -> None:
     """Handles the /help command."""
     await message.answer(
-        "🍑 **Pfirsichfest Bot Help** 🍑\n\n"
+        "🍑 <b>Pfirsichfest Bot Help</b> 🍑\n\n"
         "This bot is a private, serverless torrent downloader.\n\n"
-        "**Commands:**\n"
-        "`/download <magnet_link>` - Starts a secure ephemeral VM to download the torrent.\n"
-        "`/status` - Shows the progress of active downloads.\n"
-        "`/help` - Displays this message.\n\n"
+        "<b>Commands:</b>\n"
+        "<code>/download &lt;magnet_link&gt;</code> - Starts a secure ephemeral VM to download the torrent.\n"
+        "<code>/status</code> - Shows the progress of active downloads.\n"
+        "<code>/help</code> - Displays this message.\n\n"
         "Files under 2GB are sent directly here. Larger files are securely archived to your Google Cloud Storage bucket.",
-        parse_mode=ParseMode.MARKDOWN,
+        parse_mode=ParseMode.HTML,
     )
 
 
@@ -97,7 +99,9 @@ async def cmd_download(message: types.Message, command: Command) -> None:
     elif message.reply_to_message and message.reply_to_message.text:
         magnet_link = message.reply_to_message.text.strip()
     else:
-        await message.answer("Please provide a magnet link: `/download <magnet_link>`")
+        await message.answer(
+            "Please provide a magnet link: <code>/download &lt;magnet_link&gt;</code>"
+        )
         return
 
     if not magnet_link.startswith("magnet:?"):
@@ -128,7 +132,7 @@ async def cmd_download(message: types.Message, command: Command) -> None:
             await bot.edit_message_text(
                 chat_id=message.chat.id,
                 message_id=reply.message_id,
-                text=f"Started VM instance `{instance_name}`.\nWill report back on progress.",
+                text=f"Started VM instance <code>{instance_name}</code>.\nWill report back on progress.",
             )
     except Exception:
         logger.exception("Failed to start VM")
@@ -151,18 +155,20 @@ async def cmd_status(message: types.Message) -> None:
         db.collection("downloads").where("status", "!=", "completed").stream()
     )
 
-    status_text = "📊 **Active Downloads:**\n\n"
+    status_text = "📊 <b>Active Downloads:</b>\n\n"
     count: int = 0
     for doc in active_downloads:
         data = doc.to_dict()
         if data and data.get("chat_id") == message.chat.id:
             count += 1
-            status_text += f"ID: `{doc.id}`\nStatus: {data.get('status')}\n---\n"
+            status_text += (
+                f"ID: <code>{doc.id}</code>\nStatus: {data.get('status')}\n---\n"
+            )
 
     if count == 0:
         status_text = "No active downloads."
 
-    await message.answer(status_text, parse_mode=ParseMode.MARKDOWN)
+    await message.answer(status_text, parse_mode=ParseMode.HTML)
 
 
 @asynccontextmanager
@@ -171,9 +177,12 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     logger.info("Starting up FastAPI application...")
 
     global db  # noqa: PLW0603
-    if os.environ.get("GOOGLE_CLOUD_PROJECT", "") != "":
-        db = firestore.Client()
-        logger.info("Firestore client initialized.")
+    gcp_project = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
+    if gcp_project and gcp_project != "your-gcp-project-id":
+        db = firestore.Client(project=gcp_project)
+        logger.info("Firestore client initialized for %s.", gcp_project)
+    else:
+        logger.warning("No valid GOOGLE_CLOUD_PROJECT set. Running without Firestore.")
 
     global bot  # noqa: PLW0603
     token = get_secret("telegram-bot-token")
