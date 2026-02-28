@@ -2,7 +2,7 @@ import logging
 import os
 
 from google.cloud import (
-    compute_v1,  # type: ignore - Missing type stubs for google-cloud-compute
+    compute_v1,  # type: ignore[import-untyped]
 )
 
 logger = logging.getLogger(__name__)

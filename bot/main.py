@@ -13,11 +13,11 @@ from aiogram.client.default import DefaultBotProperties
 from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.types import Update
-from dotenv import load_dotenv
+from dotenv import load_dotenv  # type: ignore[import-untyped]
 from fastapi import FastAPI, HTTPException, Request
 from google.cloud import (
-    firestore,  # type: ignore - Missing type stubs for google-cloud-firestore
-    secretmanager,  # type: ignore - Missing type stubs for google-cloud-secret-manager
+    firestore,  # type: ignore[import-untyped]
+    secretmanager,  # type: ignore[import-untyped]
 )
 
 from .compute_helper import SpotVMProvisioner

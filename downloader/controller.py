@@ -7,13 +7,13 @@ import sys
 import time
 from pathlib import Path
 
-import requests
-from dotenv import load_dotenv
+import requests  # type: ignore[import-untyped]
+from dotenv import load_dotenv  # type: ignore[import-untyped]
 from google.cloud import (
-    compute_v1,  # type: ignore - Missing type stubs for google-cloud-compute
-    firestore,  # type: ignore - Missing type stubs for google-cloud-firestore
-    secretmanager,  # type: ignore - Missing type stubs for google-cloud-secret-manager
-    storage,  # type: ignore - Missing type stubs for google-cloud-storage
+    compute_v1,  # type: ignore[import-untyped]
+    firestore,  # type: ignore[import-untyped]
+    secretmanager,  # type: ignore[import-untyped]
+    storage,  # type: ignore[import-untyped]
 )
 
 load_dotenv(override=False)
