@@ -20,6 +20,8 @@ from google.cloud import (
     secretmanager,  # type: ignore
 )
 
+from .compute_helper import SpotVMProvisioner
+
 # Configure logging
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
 logger = logging.getLogger(__name__)
@@ -101,12 +103,16 @@ async def cmd_download(message: types.Message, command: Command) -> None:
         )
 
     try:
-        # Example of where to call trigger_spot_vm(download_id, magnet_link)
+        provisioner = SpotVMProvisioner(
+            download_id=download_id, magnet_link=magnet_link
+        )
+        instance_name = provisioner.provision()
+
         if bot:
             await bot.edit_message_text(
                 chat_id=message.chat.id,
                 message_id=reply.message_id,
-                text=f"Started VM instance `pfirsichfest-vm-{download_id}`.\nWill report back on progress.",
+                text=f"Started VM instance `{instance_name}`.\nWill report back on progress.",
             )
     except Exception:
         logger.exception("Failed to start VM")

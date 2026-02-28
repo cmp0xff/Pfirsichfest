@@ -6,65 +6,77 @@ from google.cloud import compute_v1  # type: ignore
 logger = logging.getLogger(__name__)
 
 
-def trigger_spot_vm(download_id: str, magnet_link: str) -> str:
-    """Provisions an ephemeral Spot VM on Google Compute Engine to handle the download."""
-    project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
-    zone = os.environ.get("GOOGLE_CLOUD_ZONE", "us-central1-a")
-    source_image = "global/images/family/ubuntu-2204-lts"
+class SpotVMProvisioner:
+    """Provisions ephemeral Spot VMs on Google Compute Engine for download operations."""
 
-    machine_type = f"zones/{zone}/machineTypes/e2-micro"
-    instance_name = f"pfirsichfest-vm-{download_id}"
+    def __init__(self, download_id: str, magnet_link: str) -> None:
+        """Initializes the provisioner with task details."""
+        self.download_id = download_id
+        self.magnet_link = magnet_link
+        self.project_id = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
+        self.zone = os.environ.get("GOOGLE_CLOUD_ZONE", "us-central1-a")
+        self.instance_name = f"pfirsichfest-vm-{self.download_id}"
+        self.client = compute_v1.InstancesClient()
 
-    compute_client = compute_v1.InstancesClient()
+    def _build_metadata(self) -> compute_v1.Metadata:
+        """Constructs the VM metadata payload with the download targets."""
+        metadata = compute_v1.Metadata()
+        metadata.items = [
+            compute_v1.Items(key="MAGNET_LINK", value=self.magnet_link),
+            compute_v1.Items(key="DOWNLOAD_ID", value=self.download_id),
+        ]
+        return metadata
 
-    metadata = compute_v1.Metadata()
-    metadata.items = [
-        compute_v1.Items(key="MAGNET_LINK", value=magnet_link),
-        compute_v1.Items(key="DOWNLOAD_ID", value=download_id),
-    ]
-
-    scheduling = compute_v1.Scheduling(
-        provisioning_model="SPOT",
-        preemptible=True,
-    )
-
-    disk = compute_v1.AttachedDisk(
-        auto_delete=True,
-        boot=True,
-        initialize_params=compute_v1.AttachedDiskInitializeParams(
-            source_image=source_image,
-            disk_size_gb=50,
-        ),
-    )
-
-    network_interface = compute_v1.NetworkInterface(
-        access_configs=[
-            compute_v1.AccessConfig(name="External NAT", type_="ONE_TO_ONE_NAT")
-        ],
-    )
-
-    instance = compute_v1.Instance(
-        name=instance_name,
-        machine_type=machine_type,
-        disks=[disk],
-        network_interfaces=[network_interface],
-        scheduling=scheduling,
-        metadata=metadata,
-    )
-
-    logger.info("Creating Spot VM: %s in %s", instance_name, zone)
-
-    try:
-        operation = compute_client.insert(
-            project=project_id,
-            zone=zone,
-            instance_resource=instance,
+    def _build_disk(self) -> compute_v1.AttachedDisk:
+        """Constructs the ephemeral boot disk configuration."""
+        return compute_v1.AttachedDisk(
+            auto_delete=True,
+            boot=True,
+            initialize_params=compute_v1.AttachedDiskInitializeParams(
+                source_image="global/images/family/ubuntu-2204-lts",
+                disk_size_gb=50,
+            ),
         )
-        logger.info(
-            "VM Creation Operation Name: %s", getattr(operation, "name", "unknown")
-        )
-    except Exception:
-        logger.exception("Failed to create VM %s", instance_name)
-        raise
 
-    return instance_name
+    def _build_network(self) -> compute_v1.NetworkInterface:
+        """Constructs the network interface pointing to the external internet."""
+        return compute_v1.NetworkInterface(
+            access_configs=[
+                compute_v1.AccessConfig(name="External NAT", type_="ONE_TO_ONE_NAT")
+            ],
+        )
+
+    def _build_instance_resource(self) -> compute_v1.Instance:
+        """Assembles the final Compute Engine Instance layout."""
+        return compute_v1.Instance(
+            name=self.instance_name,
+            machine_type=f"zones/{self.zone}/machineTypes/e2-micro",
+            disks=[self._build_disk()],
+            network_interfaces=[self._build_network()],
+            scheduling=compute_v1.Scheduling(
+                provisioning_model="SPOT",
+                preemptible=True,
+            ),
+            metadata=self._build_metadata(),
+        )
+
+    def provision(self) -> str:
+        """Executes the Google Cloud API call to spin up the Spot VM."""
+        logger.info("Creating Spot VM: %s in %s", self.instance_name, self.zone)
+
+        try:
+            instance_resource = self._build_instance_resource()
+            operation = self.client.insert(
+                project=self.project_id,
+                zone=self.zone,
+                instance_resource=instance_resource,
+            )
+            logger.info(
+                "VM Creation Operation Name: %s", getattr(operation, "name", "unknown")
+            )
+        except Exception as e:
+            logger.exception("Failed to create VM %s", self.instance_name)
+            msg = f"GCP VM Provisioning failed: {e}"
+            raise RuntimeError(msg) from e
+
+        return self.instance_name
