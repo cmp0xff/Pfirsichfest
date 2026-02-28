@@ -70,9 +70,9 @@ async def cmd_start(message: types.Message) -> None:
     """Handles the /start command."""
     await message.answer(
         "Welcome to the Pfirsichfest P2P Bot! 🍑\n"
-        "Send <code>/download &lt;magnet_link&gt;</code> to begin a secure download instance.\n"
-        "Send <code>/status</code> to check active instances.\n"
-        "Send <code>/help</code> for more information.",
+        "Send /download <code>&lt;magnet_link&gt;</code> to begin a secure download instance.\n"
+        "Send /status to check active instances.\n"
+        "Send /help for more information.",
     )
 
 
@@ -83,9 +83,9 @@ async def cmd_help(message: types.Message) -> None:
         "🍑 <b>Pfirsichfest Bot Help</b> 🍑\n\n"
         "This bot is a private, serverless torrent downloader.\n\n"
         "<b>Commands:</b>\n"
-        "<code>/download &lt;magnet_link&gt;</code> - Starts a secure ephemeral VM to download the torrent.\n"
-        "<code>/status</code> - Shows the progress of active downloads.\n"
-        "<code>/help</code> - Displays this message.\n\n"
+        "/download <code>&lt;magnet_link&gt;</code> - Starts a secure ephemeral VM to download the torrent.\n"
+        "/status - Shows the progress of active downloads.\n"
+        "/help - Displays this message.\n\n"
         "Files under 2GB are sent directly here. Larger files are securely archived to your Google Cloud Storage bucket.",
         parse_mode=ParseMode.HTML,
     )
@@ -100,7 +100,7 @@ async def cmd_download(message: types.Message, command: Command) -> None:
         magnet_link = message.reply_to_message.text.strip()
     else:
         await message.answer(
-            "Please provide a magnet link: <code>/download &lt;magnet_link&gt;</code>"
+            "Please provide a magnet link: /download <code>&lt;magnet_link&gt;</code>"
         )
         return
 
