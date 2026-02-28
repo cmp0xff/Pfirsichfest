@@ -148,7 +148,11 @@ async def cmd_download(message: types.Message, command: Command) -> None:
 async def cmd_status(message: types.Message) -> None:
     """Handles the /status command."""
     if not db:
-        await message.answer("Database connection not initialized.")
+        await message.answer(
+            "Database connection not initialized. "
+            "This typically happens when running locally without a GOOGLE_CLOUD_PROJECT configured. "
+            "Active downloads cannot be tracked.",
+        )
         return
 
     active_downloads = (
