@@ -29,7 +29,7 @@ Because this bot provides direct execution access to cloud billing infrastructur
 
 ### 1. Infrastructure Setup
 1. Copy `.env.example` to `.env`. Fill out your specific `TELEGRAM_BOT_TOKEN`, `AUTHORIZED_USER_ID`, and optional VPN connection parameters.
-2. Run `./scripts/setup_gcp.sh`. This script will automatically:
+2. Run `./bin/setup_gcp.sh`. This script will automatically:
    - Authenticate your local environment.
    - Verify your Cloud Billing Account.
    - Execute OpenTofu (`infra/main.tf`) to securely provision the Google Cloud Storage bucket, the IAM Service Accounts, and inject your `.env` tokens into Google Secret Manager natively.
@@ -38,7 +38,7 @@ Because this bot provides direct execution access to cloud billing infrastructur
 You don't need to deploy immediately to Cloud Run to test changes!
 Use the local run script to spin up the FastAPI webhook directly on your machine:
 ```bash
-./scripts/run_bot_locally.sh
+./bin/run_bot_locally.sh
 ```
 *Note: Telegram requires a public HTTPS URL for webhooks. You must use a reverse tunneling proxy (like `ngrok`) to pipe your public traffic to `localhost:8080`, and register that HTTPS URL via the Telegram `setWebhook` API.*
 

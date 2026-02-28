@@ -17,30 +17,31 @@ gcloud auth login
 gcloud auth application-default login
 ```
 
-## 2. Initialize the Project
+## 2. Automated Project Instantiation
 
-Create the overarching project to hold your infrastructure:
+Instead of manually creating projects, linking billing platforms, and tracking terraform variables by hand, utilize the provided initialization pipeline!
+
+First, ensure your `.env` contains the required `TELEGRAM_BOT_TOKEN`, `AUTHORIZED_USER_ID`, and specifically the `GOOGLE_CLOUD_PROJECT` identifier you'd like to reserve.
+
+Then simply run:
 ```bash
-gcloud projects create "your-pfirsichfest-project-id"
-gcloud config set project "your-pfirsichfest-project-id"
+./bin/setup_gcp.sh
 ```
 
-## 3. Link Billing Account
+This script will automatically:
+1. Verify you have an active billing account mapped for Spot VM access.
+2. Formally lock your GCP Project.
+3. Automatically execute OpenTofu (`infra/main.tf`) binding your `.env` tokens into Google Secret Manager natively!
 
-Serverless components cost pennies, but GCP strictly requires an active billing account linked:
+After this point, merging configurations into `main` will successfully interact with the deployed Bot interface.
+
+
+## 3. Local Webhook Development
+
+You do not need to constantly push to GCP to test your Python changes!
+To run the bot locally alongside a hot-reloading ASGI server:
+
 ```bash
-gcloud alpha billing projects link "your-pfirsichfest-project-id" --billing-account="YOUR-BILLING-ID"
+./bin/run_bot_locally.sh
 ```
-
-## 4. Prepare OpenTofu
-
-Ensure your `.env` contains the newly created `GOOGLE_CLOUD_PROJECT` id.
-Navigate to the `infra/` folder and initialize the Google Cloud foundations:
-
-```bash
-cd infra/
-tofu init
-tofu apply
-```
-
-This ensures the Google Secret Manager buckets, Cloud Run IAM APIs, and Spot VM instantiation permissions are securely locked and generated! After this point, merging configurations into `main` will successfully interact with the deployed Bot interface.
+*Note: Because Telegram's Webhook API strictly requires public HTTPS addresses to push updates, you MUST proxy your local `8080` port using an ingress tool like `ngrok http 8080`, and register that temporary URL with the BotFather.*
