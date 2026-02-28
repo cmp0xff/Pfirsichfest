@@ -34,7 +34,15 @@ Because this bot provides direct execution access to cloud billing infrastructur
    - Verify your Cloud Billing Account.
    - Execute OpenTofu (`infra/main.tf`) to securely provision the Google Cloud Storage bucket, the IAM Service Accounts, and inject your `.env` tokens into Google Secret Manager natively.
 
-### 2. Local Development 
+### 2. Conda & IDE Setup
+You must configure the underlying Python runtimes before modifying the Bot logic locally. 
+Run the developer setup script to compile the two distinct Conda environments (`pfirsichfest-bot` and `pfirsichfest-downloader`):
+```bash
+./bin/setup_dev_env.sh
+```
+*Note: We included a `pfirsichfest.code-workspace` definition. If you open this file inside VSCode, it separates the root folder horizontally, automatically applying the respective localized Conda environments to your workspace.*
+
+### 3. Local Webhook Execution 
 You don't need to deploy immediately to Cloud Run to test changes!
 Use the local run script to spin up the FastAPI webhook directly on your machine:
 ```bash
@@ -42,7 +50,7 @@ Use the local run script to spin up the FastAPI webhook directly on your machine
 ```
 *Note: Telegram requires a public HTTPS URL for webhooks. You must use a reverse tunneling proxy (like `ngrok`) to pipe your public traffic to `localhost:8080`, and register that HTTPS URL via the Telegram `setWebhook` API.*
 
-### 3. Cloud Deployment
+### 4. Cloud Deployment
 Once your changes are verified locally, merge your branch to `main`. The underlying GitHub Actions will format, type-check, and automate tests.
 
 To manually deploy the bot to Google Cloud Run:
@@ -50,7 +58,7 @@ To manually deploy the bot to Google Cloud Run:
 conda run -n pfirsichfest-bot gcloud run deploy
 ```
 
-### 4. Code Quality & Monitoring
+### 5. Code Quality & Monitoring
 Standard Python `logging` modules are utilized universally. Google Cloud automatically bridges these `stdout` interfaces into **Cloud Logging** natively (for both Cloud Run containers and Spot VMs), enabling seamless dashboard aggregation without configuring explicit stackdriver packages.
 
 Code styling is checked strictly before commits:
