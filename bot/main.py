@@ -16,8 +16,8 @@ from aiogram.types import Update
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from google.cloud import (
-    firestore,  # type: ignore
-    secretmanager,  # type: ignore
+    firestore,  # type: ignore - Missing type stubs for google-cloud-firestore
+    secretmanager,  # type: ignore - Missing type stubs for google-cloud-secret-manager
 )
 
 from .compute_helper import SpotVMProvisioner
@@ -34,8 +34,8 @@ db: firestore.Client | None = None
 WEBHOOK_PATH = "/webhook"
 
 
-# Load environment variables
-load_dotenv()
+# Load local environment variables (does not override existing OS env vars in Cloud)
+load_dotenv(override=False)
 
 
 def get_secret(secret_id: str, version_id: str = "latest") -> str | None:

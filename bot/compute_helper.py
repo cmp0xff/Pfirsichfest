@@ -1,7 +1,9 @@
 import logging
 import os
 
-from google.cloud import compute_v1  # type: ignore
+from google.cloud import (
+    compute_v1,  # type: ignore - Missing type stubs for google-cloud-compute
+)
 
 logger = logging.getLogger(__name__)
 
@@ -17,6 +19,27 @@ class SpotVMProvisioner:
         self.zone = os.environ.get("GOOGLE_CLOUD_ZONE", "us-central1-a")
         self.instance_name = f"pfirsichfest-vm-{self.download_id}"
         self.client = compute_v1.InstancesClient()
+
+    def provision(self) -> str:
+        """Executes the Google Cloud API call to spin up the Spot VM."""
+        logger.info("Creating Spot VM: %s in %s", self.instance_name, self.zone)
+
+        try:
+            instance_resource = self._build_instance_resource()
+            operation = self.client.insert(
+                project=self.project_id,
+                zone=self.zone,
+                instance_resource=instance_resource,
+            )
+            logger.info(
+                "VM Creation Operation Name: %s", getattr(operation, "name", "unknown")
+            )
+        except Exception as e:
+            logger.exception("Failed to create VM %s", self.instance_name)
+            msg = f"GCP VM Provisioning failed: {e}"
+            raise RuntimeError(msg) from e
+
+        return self.instance_name
 
     def _build_metadata(self) -> compute_v1.Metadata:
         """Constructs the VM metadata payload with the download targets."""
@@ -59,24 +82,3 @@ class SpotVMProvisioner:
             ),
             metadata=self._build_metadata(),
         )
-
-    def provision(self) -> str:
-        """Executes the Google Cloud API call to spin up the Spot VM."""
-        logger.info("Creating Spot VM: %s in %s", self.instance_name, self.zone)
-
-        try:
-            instance_resource = self._build_instance_resource()
-            operation = self.client.insert(
-                project=self.project_id,
-                zone=self.zone,
-                instance_resource=instance_resource,
-            )
-            logger.info(
-                "VM Creation Operation Name: %s", getattr(operation, "name", "unknown")
-            )
-        except Exception as e:
-            logger.exception("Failed to create VM %s", self.instance_name)
-            msg = f"GCP VM Provisioning failed: {e}"
-            raise RuntimeError(msg) from e
-
-        return self.instance_name
