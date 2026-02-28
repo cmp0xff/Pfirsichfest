@@ -14,3 +14,11 @@ A serverless, private torrent downloading pipeline managed via a Telegram bot, i
 - `downloader/` - The Dockerfile, OpenVPN templates, and runtime Python controller for the Spot VM.
 - `infra/` - OpenTofu configuration to deploy everything securely.
 - `docs/` - Project documentation.
+
+## Legal & Usage Disclaimer
+This project is provided as an open-source, educational example of serverless infrastructure automation and Telegram bot integration. The authors do not condone piracy or copyright infringement.
+
+**End-users are strictly responsible** for how they deploy and use this pipeline, and for ensuring they have the legal right to download and share the content they request.
+
+> [!WARNING]
+> Running BitTorrent clients on public cloud providers (like Google Cloud) may expose your ephemeral VM's IP address to the torrent swarm. Users must ensure that their use of this software complies with all applicable laws and their cloud provider's Terms of Service. Downloading or distributing copyrighted materials without authorization may result in the suspension or termination of your cloud project or billing account by the provider.
