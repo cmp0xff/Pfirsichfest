@@ -69,7 +69,23 @@ async def cmd_start(message: types.Message) -> None:
     await message.answer(
         "Welcome to the Pfirsichfest P2P Bot! 🍑\n"
         "Send `/download <magnet_link>` to begin a secure download instance.\n"
-        "Send `/status` to check active instances.",
+        "Send `/status` to check active instances.\n"
+        "Send `/help` for more information.",
+    )
+
+
+@dp.message(Command("help"))
+async def cmd_help(message: types.Message) -> None:
+    """Handles the /help command."""
+    await message.answer(
+        "🍑 **Pfirsichfest Bot Help** 🍑\n\n"
+        "This bot is a private, serverless torrent downloader.\n\n"
+        "**Commands:**\n"
+        "`/download <magnet_link>` - Starts a secure ephemeral VM to download the torrent.\n"
+        "`/status` - Shows the progress of active downloads.\n"
+        "`/help` - Displays this message.\n\n"
+        "Files under 2GB are sent directly here. Larger files are securely archived to your Google Cloud Storage bucket.",
+        parse_mode=ParseMode.MARKDOWN,
     )
 
 
@@ -186,6 +202,19 @@ async def telegram_webhook(request: Request) -> dict[str, str]:
     try:
         body = await request.json()
         update = Update(**body)
+
+        # Authorization Check
+        authorized_id_str = get_secret("authorized-user-id")
+        user_id = None
+        if update.message and update.message.from_user:
+            user_id = update.message.from_user.id
+        elif update.callback_query and update.callback_query.from_user:
+            user_id = update.callback_query.from_user.id
+
+        if authorized_id_str and user_id and str(user_id) != authorized_id_str:
+            logger.warning("Unauthorized access attempt from %s", user_id)
+            return {"status": "ok"}  # Return 200 OK so Telegram doesn't retry
+
         await dp.feed_update(bot=bot, update=update)
         return {"status": "ok"}
     except Exception:

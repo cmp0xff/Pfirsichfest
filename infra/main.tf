@@ -14,6 +14,12 @@ variable "gcp_region" {
   default     = "us-central1"
 }
 
+variable "authorized_user_id" {
+  description = "Allowed Telegram User ID (Numeric)"
+  type        = string
+  sensitive   = true
+}
+
 variable "enable_vpn" {
   description = "Set to true to provision VPN secrets in Secret Manager"
   type        = bool
@@ -46,6 +52,22 @@ resource "google_secret_manager_secret" "telegram_token" {
       }
     }
   }
+}
+
+resource "google_secret_manager_secret" "authorized_user_id" {
+  secret_id = "authorized-user-id"
+  replication {
+    user_managed {
+      replicas {
+        location = var.gcp_region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "authorized_user_id_data" {
+  secret      = google_secret_manager_secret.authorized_user_id.id
+  secret_data = var.authorized_user_id
 }
 
 resource "google_secret_manager_secret" "vpn_user" {

@@ -1,62 +1,59 @@
-# Architecture Proposal: Pfirsichfest
+# Pfirsichfest Architecture & Documentation
 
-This plan defines the architecture for the "Pfirsichfest" project, a Python-based serverless torrent downloading pipeline managed via a Telegram bot, integrating a VPN and sending artifacts directly via Telegram (or GCS for files > 2GB).
+## Overview
+Pfirsichfest is a private, serverless proxy downloader. It allows a single authorized user to send magnet links to a Telegram Bot, which spins up a secure ephemeral VM (Spot VM). The VM connects to an optional VPN, downloads the file using `aria2`, uploads it back to Telegram or Google Cloud Storage, and then immediately destroys itself to save costs.
 
-## Architecture Highlights
-- **Language:** Python 3 (FastAPI/aiogram for the bot, standard scripts for the downloader).
-- **Structure:** Monorepo (`Pfirsichfest`) containing the Bot, Downloader, and Infrastructure code.
-- **Compute:** Cloud Run for the Bot API, Ephemeral Spot VMs (Compute Engine) for the Downloader.
+## For Users
 
-## Key Architectural Decisions
+### Getting Started
+Because this bot provides direct execution access to cloud billing infrastructure, it uses strict ownership validation. It will **only respond to the Telegram ID configured in `AUTHORIZED_USER_ID`**. Any other users attempting to message the bot will be ignored silently.
 
-### 1. Monitoring & Logging
-Standard Python `logging` modules are utilized universally. Google Cloud automatically bridges these `stdout` interfaces into **Cloud Logging** natively (for both Cloud Run containers and Spot VMs), enabling seamless dashboard aggregation without configuring explicit stackdriver packages.
+### Commands
+- `/start` - Displays the welcome message.
+- `/help` - Displays detailed information about how to use the bot and its limits.
+- `/download <magnet_link>` - Initiates a secure download process. The bot will automatically spin up an ephemeral Google Compute Engine VM and track its status.
+- `/status` - Prompts the bot to query Firestore and return the active status of all your ongoing downloads.
 
-### 2. The Local Telegram Bot API Server
-Because the Downloader VM is already an ephemeral environment, we run the official Telegram Bot API Server Docker container **on the Downloader VM itself** alongside the torrent client. This allows bypassing the standard 50 MB Telegram upload limit (up to 2GB) without paying for a constantly running custom server.
-
-### 2. VPN & Serverless Compute
-- **Decision:** Google Compute Engine (Spot VM) for the Downloader.
-- **Why:** VPNs use standard protocols (OpenVPN) requiring OS-level privileges. Spinning up an `e2-micro` Spot VM dynamically gives us these privileges for pennies, deleting itself when finished.
-
-### 3. Secrets Management
-- **Decision:** Google Secret Manager. Stores API tokens and VPN passwords.
-
-### 4. Infrastructure as Code (OpenTofu)
-- **Decision:** Yes, we will use **OpenTofu**.
-- **Why it's necessary:** Deploying Cloud Run, setting up IAM permissions to allow the Bot to spawn a VM, creating Storage Buckets, and configuring Secret Manager by clicking around the GCP Console is highly error-prone and hard to reproduce. Having a single `tofu apply` command makes it trivial to deploy (or redeploy if you lose the GCP project). We will define the OpenTofu code in the `/infra` folder.
-
-### 5. Environments (dev, uat, prod)
-- **Decision:** Single Environment (Prod).
-- **Why:** For a personal utility project, maintaining multi-environment separation introduces unnecessary overhead and costs. A single "production" branch is sufficient. You can test locally using Docker before pushing. 
-
-### 6. Status Queries During Download
-- **Decision:** Yes, supported via `/status` command and asynchronous updates.
-- **How it works:**
-  - When the Bot generates the VM, it assigns it a unique ID (e.g., in a lightweight Firestore DB).
-  - The Downloader Python script occasionally queries the Torrent client (aria2) for progress.
-  - The Downloader script periodically sends HTTP updates to the Bot, OR the script updates the original Telegram message (e.g., "Downloading: 45% (2.1 MB/s)").
-  - You can also proactively message `/status` to the bot, which queries the active instances.
+### Storage Limits
+- **Files < 2GB**: Will be uploaded directly back to you in the Telegram chat securely.
+- **Files > 2GB**: Will be archived securely to your private Google Cloud Storage bucket (due to Telegram Bot API native limits).
 
 ---
 
-## Proposed System Architecture
+## For Developers
 
-### 1. Telegram Bot Service (Cloud Run API)
-- Python Webhook (using a framework like `aiogram`).
-- Uses GCP Compute API to provision the Downloader VM.
-- Reads `/status` commands from you.
+### Prerequisites
+- Python 3.13 via Conda
+- OpenTofu (`tofu`)
+- Google Cloud SDK (`gcloud`)
 
-### 2. Downloader Service (Ephemeral Spot VM)
-- Created on-demand by the Bot.
-- **Boot Sequence:**
-  1. Starts OpenVPN container.
-  2. Starts local Telegram Bot API server.
-  3. Starts Python Controller + aria2.
-  4. Downloads the file, periodically sending progress to Telegram either via the Bot Service or directly querying the API.
-  5. Upon finish, uploads file (either directly to Telegram if <2GB, or to GCS if >2GB).
-  6. Deletes itself via GCP API.
+### 1. Infrastructure Setup
+1. Copy `.env.example` to `.env`. Fill out your specific `TELEGRAM_BOT_TOKEN`, `AUTHORIZED_USER_ID`, and optional VPN connection parameters.
+2. Run `./scripts/setup_gcp.sh`. This script will automatically:
+   - Authenticate your local environment.
+   - Verify your Cloud Billing Account.
+   - Execute OpenTofu (`infra/main.tf`) to securely provision the Google Cloud Storage bucket, the IAM Service Accounts, and inject your `.env` tokens into Google Secret Manager natively.
 
-## Next Steps
-- Begin creating the `Pfirsichfest` monorepo structure.
-- Draft the OpenTofu infrastructure code to deploy the Bot.
+### 2. Local Development 
+You don't need to deploy immediately to Cloud Run to test changes!
+Use the local run script to spin up the FastAPI webhook directly on your machine:
+```bash
+./scripts/run_bot_locally.sh
+```
+*Note: Telegram requires a public HTTPS URL for webhooks. You must use a reverse tunneling proxy (like `ngrok`) to pipe your public traffic to `localhost:8080`, and register that HTTPS URL via the Telegram `setWebhook` API.*
+
+### 3. Cloud Deployment
+Once your changes are verified locally, merge your branch to `main`. The underlying GitHub Actions will format, type-check, and automate tests.
+
+To manually deploy the bot to Google Cloud Run:
+```bash
+conda run -n pfirsichfest-bot gcloud run deploy
+```
+
+### 4. Code Quality & Monitoring
+Standard Python `logging` modules are utilized universally. Google Cloud automatically bridges these `stdout` interfaces into **Cloud Logging** natively (for both Cloud Run containers and Spot VMs), enabling seamless dashboard aggregation without configuring explicit stackdriver packages.
+
+Code styling is checked strictly before commits:
+- **Ruff**: Enforces rigorous formatting.
+- **Pyright**: Enforces strict OOP type-checking.
+Run `pre-commit run --all-files` to test your code locally.
