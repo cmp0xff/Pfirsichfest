@@ -62,15 +62,7 @@ conda env create -f downloader/environment.yml
 
 ### 3. Local Webhook Execution 
 You don't need to deploy immediately to Cloud Run to test changes!
-Use the local run script to spin up the FastAPI webhook directly on your machine (for details, see [run_bot_locally.md](./run_bot_locally.md)):
-```bash
-./bin/run_bot_locally.sh
-```
-Here is the core command executed by the script:
-```bash
-conda run -n pfirsichfest-bot uvicorn bot.main:app --host 0.0.0.0 --port 8080 --reload
-```
-*Note: Telegram requires a public HTTPS URL for webhooks. You must use a reverse tunneling proxy (like `ngrok`) to pipe your public traffic to `localhost:8080`, and register that HTTPS URL via the Telegram `setWebhook` API.*
+For full instructions on how to run the bot locally on your machine, including setting up a reverse tunneling proxy like `ngrok`, please see [run_bot_locally.md](./run_bot_locally.md).
 
 ### 4. Cloud Deployment
 Once your changes are verified locally, merge your branch to `main`. The underlying GitHub Actions will format, type-check, and automate tests.

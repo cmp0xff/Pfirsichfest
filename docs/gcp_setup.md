@@ -69,13 +69,4 @@ After either process completes, merging configurations into `main` will successf
 ## 3. Local Webhook Development
 
 You do not need to constantly push to GCP to test your Python changes!
-To run the bot locally alongside a hot-reloading ASGI server:
-
-```bash
-./bin/run_bot_locally.sh
-```
-Here is the core command executed by the script:
-```bash
-conda run -n pfirsichfest-bot uvicorn bot.main:app --host 0.0.0.0 --port 8080 --reload
-```
-*Note: Because Telegram's Webhook API strictly requires public HTTPS addresses to push updates, you MUST proxy your local `8080` port using an ingress tool like `ngrok http 8080`, and register that temporary URL with the BotFather.*
+For full instructions on how to run the bot locally alongside a hot-reloading ASGI server, please refer to [run_bot_locally.md](./run_bot_locally.md).
