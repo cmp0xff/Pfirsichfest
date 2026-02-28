@@ -27,8 +27,10 @@ Then simply run:
 ```bash
 ./bin/setup_gcp.sh
 ```
-
-This script will automatically verify billing, formally lock the project, and apply the OpenTofu logic natively.
+This script will automatically verify billing, formally lock the project, and apply the OpenTofu logic natively via a snippet like:
+```bash
+tofu apply -var="..." -auto-approve
+```
 
 #### Manual Configuration (Alternative)
 If you prefer setting up the components by hand, or modifying variables heavily:
@@ -70,4 +72,5 @@ To run the bot locally alongside a hot-reloading ASGI server:
 ```bash
 ./bin/run_bot_locally.sh
 ```
+*(For example, it runs: `conda run -n pfirsichfest-bot uvicorn bot.main:app --host 0.0.0.0 --port 8080 --reload`)*
 *Note: Because Telegram's Webhook API strictly requires public HTTPS addresses to push updates, you MUST proxy your local `8080` port using an ingress tool like `ngrok http 8080`, and register that temporary URL with the BotFather.*
