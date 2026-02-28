@@ -28,12 +28,38 @@ Then simply run:
 ./bin/setup_gcp.sh
 ```
 
-This script will automatically:
-1. Verify you have an active billing account mapped for Spot VM access.
-2. Formally lock your GCP Project.
-3. Automatically execute OpenTofu (`infra/main.tf`) binding your `.env` tokens into Google Secret Manager natively!
+This script will automatically verify billing, formally lock the project, and apply the OpenTofu logic natively.
 
-After this point, merging configurations into `main` will successfully interact with the deployed Bot interface.
+#### Manual Configuration (Alternative)
+If you prefer setting up the components by hand, or modifying variables heavily:
+
+Ensure you are authenticated:
+```bash
+gcloud auth login
+gcloud auth application-default login
+```
+
+Create and target the core project:
+```bash
+gcloud projects create "your-pfirsichfest-project-id"
+gcloud config set project "your-pfirsichfest-project-id"
+```
+
+Because serverless spot VMs require billing infrastructure, link it:
+```bash
+gcloud alpha billing projects link "your-pfirsichfest-project-id" --billing-account="YOUR-BILLING-ID"
+```
+
+Finally, mount your variables and provision the Terraform modules directly:
+```bash
+cd infra/
+tofu init
+tofu apply -var="telegram_bot_token=YOUR_TOKEN" \
+           -var="authorized_user_id=YOUR_TELEGRAM_ID" \
+           -var="enable_vpn=false"
+```
+
+After either process completes, merging configurations into `main` will successfully interact with the deployed Bot interface!
 
 
 ## 3. Local Webhook Development

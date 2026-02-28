@@ -40,6 +40,13 @@ Run the developer setup script to compile the two distinct Conda environments (`
 ```bash
 ./bin/setup_dev_env.sh
 ```
+
+Alternatively, you may build the environments manually:
+```bash
+conda env create -f bot/environment.yml
+conda env create -f downloader/environment.yml
+```
+
 *Note: We included a `pfirsichfest.code-workspace` definition. If you open this file inside VSCode, it separates the root folder horizontally, automatically applying the respective localized Conda environments to your workspace.*
 
 ### 3. Local Webhook Execution 
