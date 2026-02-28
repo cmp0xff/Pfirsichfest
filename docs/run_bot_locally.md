@@ -23,11 +23,15 @@ conda run -n pfirsichfest-bot uvicorn bot.main:app --host 0.0.0.0 --port 8080 --
 ### How to receive Telegram messages locally using ngrok
 **Note:** `ngrok` is a separate third-party tool used to expose your local server to the internet. If you do not have it installed, you can download it from the [official ngrok website](https://ngrok.com/download) and refer to the [ngrok documentation](https://ngrok.com/docs) for setup instructions.
 
-1. **Start ngrok:** In a separate terminal, run `ngrok http 8080`.
-2. **Copy the Forwarding URL:** ngrok will provide a public HTTPS URL (e.g., `https://<temp-id>.ngrok-free.app`).
-3. **Register Webhook:** Open your web browser and navigate to:
-   `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<YOUR_NGROK_URL>/webhook`
-   *(Replace `<YOUR_BOT_TOKEN>` with your bot's token from BotFather, and `<YOUR_NGROK_URL>` with the forwarding URL you just copied. **Important:** Do not forget the `/webhook` at the end!)*
-4. **Test:** Send a message to your bot on Telegram. The request will route through ngrok to your local server.
+If `ngrok` is installed and available in your `PATH`, the `run_bot_locally.sh` script will automatically:
+1. Start an `ngrok` tunnel to your local `8080` port in the background.
+2. Query the temporary `ngrok` forwarding URL.
+3. Automatically configure your Telegram bot's webhook to use this new URL.
+4. Cleanly kill the `ngrok` process and restore state when you exit the script.
 
-> **Warning:** When you are done testing and close ngrok, the temporary URL will become invalid. You will need to reset the webhook to your production URL (e.g., your Google Cloud Run URL) using the same `setWebhook` API method.
+If `ngrok` is **not** installed, you will need to perform these steps manually:
+1. Start `ngrok` in a separate terminal: `ngrok http 8080`.
+2. Copy the temporary HTTPS URL provided.
+3. Call `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/setWebhook?url=<YOUR_NGROK_URL>/webhook` to set the webhook.
+
+> **Warning:** When you are done testing, you will need to manually reverse the webhook back to your production URL (e.g., your Google Cloud Run URL) using the `setWebhook` API method.
