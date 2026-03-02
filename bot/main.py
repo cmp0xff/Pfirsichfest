@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 bot: Bot | None = None
 dp: Dispatcher = Dispatcher()
 db: firestore.Client | None = None
+webhook_secret: str | None = None
+authorized_user_id: str | None = None
 
 WEBHOOK_PATH = "/webhook"
 
@@ -196,6 +198,18 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
         bot = Bot(token=token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
         logger.info("Bot instance created.")
 
+    global webhook_secret  # noqa: PLW0603
+    webhook_secret = get_secret("webhook-secret-token")
+    if not webhook_secret:
+        logger.warning(
+            "No webhook-secret-token configured. Webhook requests will not be verified."
+        )
+
+    global authorized_user_id  # noqa: PLW0603
+    authorized_user_id = get_secret("authorized-user-id")
+    if not authorized_user_id:
+        logger.warning("No authorized-user-id configured. All users will be allowed.")
+
     yield
 
     logger.info("Shutting down FastAPI application...")
@@ -212,21 +226,33 @@ async def telegram_webhook(request: Request) -> dict[str, str]:
     if bot is None:
         raise HTTPException(status_code=500, detail="Bot not initialized")
 
+    # Verify the Telegram webhook secret token to reject requests not from Telegram
+    if webhook_secret:
+        incoming_secret = request.headers.get("X-Telegram-Bot-Api-Secret-Token")
+        if incoming_secret != webhook_secret:
+            raise HTTPException(status_code=403, detail="Forbidden")
+
     try:
         body = await request.json()
         update = Update(**body)
 
         # Authorization Check
-        authorized_id_str = get_secret("authorized-user-id")
         user_id = None
         if update.message and update.message.from_user:
             user_id = update.message.from_user.id
         elif update.callback_query and update.callback_query.from_user:
             user_id = update.callback_query.from_user.id
 
-        if authorized_id_str and user_id and str(user_id) != authorized_id_str:
-            logger.warning("Unauthorized access attempt from %s", user_id)
-            return {"status": "ok"}  # Return 200 OK so Telegram doesn't retry
+        if authorized_user_id:
+            # If an authorized user is configured, a resolvable user_id is required
+            if user_id is None:
+                logger.warning(
+                    "Unauthorized access attempt: no user_id resolvable in update"
+                )
+                return {"status": "ok"}  # Return 200 OK so Telegram doesn't retry
+            if str(user_id) != authorized_user_id:
+                logger.warning("Unauthorized access attempt from user %s", user_id)
+                return {"status": "ok"}  # Return 200 OK so Telegram doesn't retry
 
         await dp.feed_update(bot=bot, update=update)
         return {"status": "ok"}

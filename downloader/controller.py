@@ -121,10 +121,14 @@ class DownloaderManager:
         creds_file.write_text(f"{vpn_user}\n{vpn_pass}\n")
         creds_file.chmod(0o600)
 
-        # In production this would daemonize the OpenVPN client via Subprocess
-        logger.info("Starting OpenVPN tunnel...")
-        time.sleep(5)  # Let tunnel establish (mocked for now)
-        logger.info("VPN ready.")
+        try:
+            # In production this would daemonize the OpenVPN client via Subprocess
+            logger.info("Starting OpenVPN tunnel...")
+            time.sleep(5)  # Let tunnel establish (mocked for now)
+            logger.info("VPN ready.")
+        finally:
+            # Remove credentials file as soon as OpenVPN has started
+            creds_file.unlink(missing_ok=True)
 
     def _start_torrent(self) -> str:
         """Utilizes aria2c over a generic subprocess to torrent the magnet."""

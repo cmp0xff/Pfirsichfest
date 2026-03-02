@@ -3,6 +3,15 @@ provider "google" {
   region  = var.gcp_region
 }
 
+provider "random" {}
+
+# Generates a cryptographically secure random webhook secret used to verify
+# that incoming webhook requests originate from Telegram.
+resource "random_password" "webhook_secret" {
+  length  = 32
+  special = false
+}
+
 variable "gcp_project_id" {
   description = "The GCP Project ID"
   type        = string
@@ -70,6 +79,22 @@ resource "google_secret_manager_secret_version" "authorized_user_id_data" {
   secret_data = var.authorized_user_id
 }
 
+resource "google_secret_manager_secret" "webhook_secret_token" {
+  secret_id = "webhook-secret-token"
+  replication {
+    user_managed {
+      replicas {
+        location = var.gcp_region
+      }
+    }
+  }
+}
+
+resource "google_secret_manager_secret_version" "webhook_secret_token_data" {
+  secret      = google_secret_manager_secret.webhook_secret_token.id
+  secret_data = random_password.webhook_secret.result
+}
+
 resource "google_secret_manager_secret" "vpn_user" {
   count     = var.enable_vpn ? 1 : 0
   secret_id = "vpn-user"
@@ -116,8 +141,15 @@ resource "google_service_account" "downloader_sa" {
 # Bot needs to spin up VMs and read secrets
 resource "google_project_iam_member" "bot_compute_admin" {
   project = var.gcp_project_id
-  role    = "roles/compute.admin"
+  role    = "roles/compute.instanceAdmin.v1"
   member  = "serviceAccount:${google_service_account.bot_sa.email}"
+}
+
+# Downloader needs to delete its own Compute Engine instance
+resource "google_project_iam_member" "downloader_compute_instance_admin" {
+  project = var.gcp_project_id
+  role    = "roles/compute.instanceAdmin.v1"
+  member  = "serviceAccount:${google_service_account.downloader_sa.email}"
 }
 
 # Downloader needs to read secrets, write to GCS, and delete itself
