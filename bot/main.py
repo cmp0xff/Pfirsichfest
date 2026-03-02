@@ -201,7 +201,9 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
     global webhook_secret  # noqa: PLW0603
     webhook_secret = get_secret("webhook-secret-token")
     if not webhook_secret:
-        logger.warning("No webhook-secret-token configured. Webhook requests will not be verified.")
+        logger.warning(
+            "No webhook-secret-token configured. Webhook requests will not be verified."
+        )
 
     global authorized_user_id  # noqa: PLW0603
     authorized_user_id = get_secret("authorized-user-id")
@@ -244,7 +246,9 @@ async def telegram_webhook(request: Request) -> dict[str, str]:
         if authorized_user_id:
             # If an authorized user is configured, a resolvable user_id is required
             if user_id is None:
-                logger.warning("Unauthorized access attempt: no user_id resolvable in update")
+                logger.warning(
+                    "Unauthorized access attempt: no user_id resolvable in update"
+                )
                 return {"status": "ok"}  # Return 200 OK so Telegram doesn't retry
             if str(user_id) != authorized_user_id:
                 logger.warning("Unauthorized access attempt from user %s", user_id)

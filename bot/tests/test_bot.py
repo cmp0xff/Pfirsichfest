@@ -1,10 +1,9 @@
 import http
 from unittest.mock import AsyncMock, MagicMock, patch
 
-import bot.main as bot_main
-import pytest
 from fastapi.testclient import TestClient
 
+import bot.main as bot_main
 from bot.main import app
 
 client = TestClient(app)
@@ -24,8 +23,9 @@ def test_health_check():
 
 def test_webhook_returns_403_with_wrong_secret():
     """Webhook must reject requests that carry a wrong secret token."""
-    with patch.object(bot_main, "bot", MagicMock()), patch.object(
-        bot_main, "webhook_secret", "correct-secret"
+    with (
+        patch.object(bot_main, "bot", MagicMock()),
+        patch.object(bot_main, "webhook_secret", "correct-secret"),
     ):
         response = client.post(
             "/webhook",
@@ -37,8 +37,9 @@ def test_webhook_returns_403_with_wrong_secret():
 
 def test_webhook_returns_403_with_missing_secret():
     """Webhook must reject requests that omit the secret token header."""
-    with patch.object(bot_main, "bot", MagicMock()), patch.object(
-        bot_main, "webhook_secret", "correct-secret"
+    with (
+        patch.object(bot_main, "bot", MagicMock()),
+        patch.object(bot_main, "webhook_secret", "correct-secret"),
     ):
         response = client.post("/webhook", json={"update_id": 1})
     assert response.status_code == http.HTTPStatus.FORBIDDEN
