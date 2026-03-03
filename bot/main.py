@@ -16,11 +16,11 @@ from aiogram.types import Update
 from dotenv import load_dotenv  # type: ignore[import-untyped]
 from fastapi import FastAPI, HTTPException, Request
 from google.cloud import (
-    firestore,  # type: ignore[import-untyped]
     secretmanager,  # type: ignore[import-untyped]
 )
 
 from .compute_helper import SpotVMProvisioner
+from .database import DatabaseClient, create_database_client
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, stream=sys.stdout)
@@ -29,7 +29,7 @@ logger = logging.getLogger(__name__)
 # Globals to hold our uninstantiated clients until startup
 bot: Bot | None = None
 dp: Dispatcher = Dispatcher()
-db: firestore.Client | None = None
+db: DatabaseClient | None = None
 
 WEBHOOK_PATH = "/webhook"
 
@@ -182,11 +182,7 @@ async def lifespan(_app: FastAPI) -> AsyncGenerator[None, None]:
 
     global db  # noqa: PLW0603
     gcp_project = os.environ.get("GOOGLE_CLOUD_PROJECT", "")
-    if gcp_project and gcp_project != "your-gcp-project-id":
-        db = firestore.Client(project=gcp_project)
-        logger.info("Firestore client initialized for %s.", gcp_project)
-    else:
-        logger.warning("No valid GOOGLE_CLOUD_PROJECT set. Running without Firestore.")
+    db = create_database_client(gcp_project or None)
 
     global bot  # noqa: PLW0603
     token = get_secret("telegram-bot-token")
