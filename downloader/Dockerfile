@@ -17,8 +17,8 @@ RUN conda env create -f environment.yml
 
 COPY . .
 
-# Ensure the controller script is executable
-RUN chmod +x controller.py
+# Install the downloader package into the Conda environment
+RUN conda run --no-capture-output -n pfirsichfest-downloader pip install --no-deps .
 
 ENTRYPOINT ["conda", "run", "--no-capture-output", "-n", "pfirsichfest-downloader"]
-CMD ["python", "controller.py"]
+CMD ["python", "-m", "downloader.controller"]

@@ -39,8 +39,10 @@ jobs:
           
       - name: Run Pytest
         shell: bash -el {0}
+        # Editable install (-e) for fast CI feedback; Dockerfiles use --no-deps for production.
         run: |
           cd bot
+          conda run -n pfirsichfest-bot pip install -e .
           conda run -n pfirsichfest-bot pytest tests/
 
   test-downloader:
@@ -58,6 +60,8 @@ jobs:
           
       - name: Run Pytest
         shell: bash -el {0}
+        # Editable install (-e) for fast CI feedback; Dockerfiles use --no-deps for production.
         run: |
           cd downloader
+          conda run -n pfirsichfest-downloader pip install -e .
           conda run -n pfirsichfest-downloader pytest tests/
