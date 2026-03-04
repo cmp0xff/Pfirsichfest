@@ -5,7 +5,7 @@ This module contains the `Dockerfile`, OpenVPN templates, and python orchestrati
 ## Overview
 Because cloud-native platforms like *Cloud Run* strictly block low-level networking changes (like `CAP_NET_ADMIN` needed for a VPN interface), the Bot service spins up this container directly on a cheap E2-Micro VM.
 
-When the container executes `controller.py`:
+When the container executes `downloader.controller`:
 1. Fetches Private VPN credentials from Google Secret Manager.
 2. Initializes an `OpenVPN` tunnel.
 3. Triggers `aria2` to perform the actual P2P download over the VPN.

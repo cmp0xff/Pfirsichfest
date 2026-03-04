@@ -1,8 +1,7 @@
 import http
 
-from fastapi.testclient import TestClient
-
 from bot.main import app
+from fastapi.testclient import TestClient
 
 client = TestClient(app)
 
